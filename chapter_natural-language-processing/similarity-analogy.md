@@ -1,10 +1,19 @@
 # Finding Synonyms and Analogies
+:label:`chapter_synonyms`
 
-In the ["Implementation of Word2vec"](./word2vec-gluon.md) section, we trained a word2vec word embedding model on a small-scale data set and searched for synonyms using the cosine similarity of word vectors. In practice, word vectors pre-trained on a large-scale corpus can often be applied to downstream natural language processing tasks. This section will demonstrate how to use these pre-trained word vectors to find synonyms and analogies. We will continue to apply pre-trained word vectors in subsequent sections.
+In :numref:`chapter_word2vec_gluon` we trained a word2vec word embedding model
+on a small-scale data set and searched for synonyms using the cosine similarity
+of word vectors. In practice, word vectors pre-trained on a large-scale corpus
+can often be applied to downstream natural language processing tasks. This
+section will demonstrate how to use these pre-trained word vectors to find
+synonyms and analogies. We will continue to apply pre-trained word vectors in
+subsequent sections.
 
 ## Using Pre-trained Word Vectors
 
-MXNet's `contrib.text` package provides functions and classes related to natural language processing (see the GluonNLP tool package[1] for more details). Next, let us check out names of the provided pre-trained word embeddings.
+MXNet's `contrib.text` package provides functions and classes related to natural
+language processing (see the [GluonNLP](https://gluon-nlp.mxnet.io/) tool package for more details). Next,
+let us check out names of the provided pre-trained word embeddings.
 
 ```{.python .input}
 from mxnet import nd
@@ -44,7 +53,12 @@ Below, we demonstrate the application of pre-trained word vectors, using GloVe a
 
 ### Finding Synonyms
 
-Here, we re-implement the algorithm used to search for synonyms by cosine similarity introduced in the ["Implementation of Word2vec"](./word2vec-gluon.md) section. In order to reuse the logic for seeking the $k$ nearest neighbors when seeking analogies, we encapsulate this part of the logic separately in the `knn` ($k$-nearest neighbors) function.
+Here, we re-implement the algorithm used to search for synonyms by cosine
+similarity introduced in :numref:`chapter_word2vec`
+
+In order to reuse the logic for seeking the $k$ nearest neighbors when
+seeking analogies, we encapsulate this part of the logic separately in the `knn`
+($k$-nearest neighbors) function.
 
 ```{.python .input}
 def knn(W, x, k):
@@ -128,16 +142,6 @@ get_analogy('do', 'did', 'go', glove_6b50d)
 * Test the fastText results.
 * If the dictionary is extremely large, how can we accelerate finding synonyms and analogies?
 
-
-
-
-## Reference
-
-[1] GluonNLP tool package. https://gluon-nlp.mxnet.io/
-
-[2] GloVe project website. https://nlp.stanford.edu/projects/glove/
-
-[3] fastText project website. https://fasttext.cc/
 
 ## Scan the QR Code to [Discuss](https://discuss.mxnet.io/t/2390)
 

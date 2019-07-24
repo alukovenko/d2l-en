@@ -1,6 +1,11 @@
 # Adadelta
+:label:`chapter_adadelta`
 
-In addition to RMSProp, Adadelta is another common optimization algorithm that helps improve the chances of finding useful solutions at later stages of iteration, which is difficult to do when using the Adagrad algorithm for the same purpose[1]. The interesting thing is that there is no learning rate hyperparameter in the Adadelta algorithm.
+In addition to RMSProp, Adadelta is another common optimization algorithm that
+helps improve the chances of finding useful solutions at later stages of
+iteration, which is difficult to do when using the Adagrad algorithm for the
+same purpose :cite:`Zeiler.2012`. The interesting thing is that there is no learning rate
+hyperparameter in the Adadelta algorithm.
 
 ## The Algorithm
 
@@ -29,18 +34,13 @@ As we can see, if the impact of $\epsilon$ is not considered here, Adadelta diff
 Adadelta needs to maintain two state variables for each independent variable, $\boldsymbol{s}_t$ and $\Delta\boldsymbol{x}_t$. We use the formula from the algorithm to implement Adadelta.
 
 ```{.python .input  n=11}
-import sys
-sys.path.insert(0, '..')
-
 %matplotlib inline
 import d2l
 from mxnet import nd
 
-features, labels = d2l.get_data_ch7()
-
-def init_adadelta_states():
-    s_w, s_b = nd.zeros((features.shape[1], 1)), nd.zeros(1)
-    delta_w, delta_b = nd.zeros((features.shape[1], 1)), nd.zeros(1)
+def init_adadelta_states(feature_dim):
+    s_w, s_b = nd.zeros((feature_dim, 1)), nd.zeros(1)
+    delta_w, delta_b = nd.zeros((feature_dim, 1)), nd.zeros(1)
     return ((s_w, delta_w), (s_b, delta_b))
 
 def adadelta(params, states, hyperparams):
@@ -55,8 +55,9 @@ def adadelta(params, states, hyperparams):
 Then, we train the model with the hyperparameter $\rho=0.9$.
 
 ```{.python .input  n=12}
-d2l.train_ch7(adadelta, init_adadelta_states(), {'rho': 0.9}, features,
-              labels)
+data_iter, feature_dim = d2l.get_data_ch10(batch_size=10)
+d2l.train_ch10(adadelta, init_adadelta_states(feature_dim),
+               {'rho': 0.9}, data_iter, feature_dim);
 ```
 
 ## Concise Implementation
@@ -64,7 +65,8 @@ d2l.train_ch7(adadelta, init_adadelta_states(), {'rho': 0.9}, features,
 From the `Trainer` instance for the algorithm named "adadelta", we can implement Adadelta in Gluon. Its hyperparameters can be specified by `rho`.
 
 ```{.python .input  n=9}
-d2l.train_gluon_ch7('adadelta', {'rho': 0.9}, features, labels)
+d2l.train_gluon_ch10('adadelta', {'rho': 0.9}, data_iter)
+
 ```
 
 ## Summary
@@ -74,10 +76,6 @@ d2l.train_gluon_ch7('adadelta', {'rho': 0.9}, features, labels)
 ## Exercises
 
 * Adjust the value of $\rho$ and observe the experimental results.
-
-## Reference
-
-[1] Zeiler, M. D. (2012). ADADELTA: an adaptive learning rate method. arXiv preprint arXiv:1212.5701.
 
 ## Scan the QR Code to [Discuss](https://discuss.mxnet.io/t/2377)
 

@@ -7,21 +7,20 @@ In this section, we will tackle the dog breed identification challenge in the Ka
 
 In this competition, we attempt to identify 120 different breeds of dogs. The data set used in this competition is actually a subset of the famous ImageNet data set. Different from the images in the CIFAR-10 data set used in the previous section, the images in the ImageNet data set are higher and wider and their dimensions are inconsistent.
 
-Figure 9.17 shows the information on the competition's webpage. In order to submit the results, please register an account on the Kaggle website first.
+:numref:`fig_kaggle_dog` shows the information on the competition's webpage. In order to submit the results, please register an account on the Kaggle website first.
 
-![Dog breed identification competition website. The data set for the competition can be accessed by clicking the "Data" tab. (Source: www.](../img/kaggle-dog.png)
+![Dog breed identification competition website. The data set for the competition can be accessed by clicking the "Data" tab.](../img/kaggle-dog.png)
+:width:`600px`
+:label:`fig_kaggle_dog`
 
 First, import the packages or modules required for the competition.
 
 ```{.python .input}
-import sys
-sys.path.insert(0, '..')
-
 import collections
 import d2l
 import math
 from mxnet import autograd, gluon, init, nd
-from mxnet.gluon import data as gdata, loss as gloss, model_zoo, nn
+from mxnet.gluon import nn
 import os
 import shutil
 import time
@@ -34,7 +33,7 @@ The competition data is divided into a training set and testing set. The trainin
 
 ### Download the Data Set
 
-After logging in to Kaggle, we can click on the "Data" tab on the dog breed identification competition webpage shown in Figure 9.17 and download the training data set "train.zip", the testing data set "test.zip", and the training data set labels "label.csv.zip". After downloading the files, place them in the three paths below:
+After logging in to Kaggle, we can click on the "Data" tab on the dog breed identification competition webpage shown in :numref:`fig_kaggle_dog` and download the training data set "train.zip", the testing data set "test.zip", and the training data set labels "label.csv.zip". After downloading the files, place them in the three paths below:
 
 * ../data/kaggle_dog/train.zip
 * ../data/kaggle_dog/test.zip
@@ -126,34 +125,34 @@ else:
 The size of the images in this section are larger than the images in the previous section. Here are some more image augmentation operations that might be useful.
 
 ```{.python .input  n=4}
-transform_train = gdata.vision.transforms.Compose([
+transform_train = gluon.data.vision.transforms.Compose([
     # Randomly crop the image to obtain an image with an area of 0.08 to 1 of
     # the original area and height to width ratio between 3/4 and 4/3. Then,
     # scale the image to create a new image with a height and width of 224
     # pixels each
-    gdata.vision.transforms.RandomResizedCrop(224, scale=(0.08, 1.0),
+    gluon.data.vision.transforms.RandomResizedCrop(224, scale=(0.08, 1.0),
                                               ratio=(3.0/4.0, 4.0/3.0)),
-    gdata.vision.transforms.RandomFlipLeftRight(),
+    gluon.data.vision.transforms.RandomFlipLeftRight(),
     # Randomly change the brightness, contrast, and saturation
-    gdata.vision.transforms.RandomColorJitter(brightness=0.4, contrast=0.4,
+    gluon.data.vision.transforms.RandomColorJitter(brightness=0.4, contrast=0.4,
                                               saturation=0.4),
     # Add random noise
-    gdata.vision.transforms.RandomLighting(0.1),
-    gdata.vision.transforms.ToTensor(),
+    gluon.data.vision.transforms.RandomLighting(0.1),
+    gluon.data.vision.transforms.ToTensor(),
     # Standardize each channel of the image
-    gdata.vision.transforms.Normalize([0.485, 0.456, 0.406],
+    gluon.data.vision.transforms.Normalize([0.485, 0.456, 0.406],
                                       [0.229, 0.224, 0.225])])
 ```
 
 During testing, we only use definite image preprocessing operations.
 
 ```{.python .input}
-transform_test = gdata.vision.transforms.Compose([
-    gdata.vision.transforms.Resize(256),
+transform_test = gluon.data.vision.transforms.Compose([
+    gluon.data.vision.transforms.Resize(256),
     # Crop a square of 224 by 224 from the center of the image
-    gdata.vision.transforms.CenterCrop(224),
-    gdata.vision.transforms.ToTensor(),
-    gdata.vision.transforms.Normalize([0.485, 0.456, 0.406],
+    gluon.data.vision.transforms.CenterCrop(224),
+    gluon.data.vision.transforms.ToTensor(),
+    gluon.data.vision.transforms.Normalize([0.485, 0.456, 0.406],
                                       [0.229, 0.224, 0.225])])
 ```
 
@@ -162,38 +161,52 @@ transform_test = gdata.vision.transforms.Compose([
 As in the previous section, we can create an `ImageFolderDataset` instance to read the data set containing the original image files.
 
 ```{.python .input  n=5}
-train_ds = gdata.vision.ImageFolderDataset(
+train_ds = gluon.data.vision.ImageFolderDataset(
     os.path.join(data_dir, input_dir, 'train'), flag=1)
-valid_ds = gdata.vision.ImageFolderDataset(
+valid_ds = gluon.data.vision.ImageFolderDataset(
     os.path.join(data_dir, input_dir, 'valid'), flag=1)
-train_valid_ds = gdata.vision.ImageFolderDataset(
+train_valid_ds = gluon.data.vision.ImageFolderDataset(
     os.path.join(data_dir, input_dir, 'train_valid'), flag=1)
-test_ds = gdata.vision.ImageFolderDataset(
+test_ds = gluon.data.vision.ImageFolderDataset(
     os.path.join(data_dir, input_dir, 'test'), flag=1)
 ```
 
 Here, we create a `DataLoader` instance, just like in the previous section.
 
 ```{.python .input}
-train_iter = gdata.DataLoader(train_ds.transform_first(transform_train),
+train_iter = gluon.data.DataLoader(train_ds.transform_first(transform_train),
                               batch_size, shuffle=True, last_batch='keep')
-valid_iter = gdata.DataLoader(valid_ds.transform_first(transform_test),
+valid_iter = gluon.data.DataLoader(valid_ds.transform_first(transform_test),
                               batch_size, shuffle=True, last_batch='keep')
-train_valid_iter = gdata.DataLoader(train_valid_ds.transform_first(
+train_valid_iter = gluon.data.DataLoader(train_valid_ds.transform_first(
     transform_train), batch_size, shuffle=True, last_batch='keep')
-test_iter = gdata.DataLoader(test_ds.transform_first(transform_test),
+test_iter = gluon.data.DataLoader(test_ds.transform_first(transform_test),
                              batch_size, shuffle=False, last_batch='keep')
 ```
 
 ## Define the Model
 
-The data set for this competition is a subset of the ImageNet data set. Therefore, we can use the approach discussed in the ["Fine Tuning"](fine-tuning.md) section to select a model pre-trained on the entire ImageNet data set and use it to extract image features to be input in the custom small-scale output network. Gluon provides a wide range of pre-trained models. Here, we will use the pre-trained ResNet-34 model. Because the competition data set is a subset of the pre-training data set, we simply reuse the input of the pre-trained model's output layer, i.e. the extracted features. Then, we can replace the original output layer with a small custom output network that can be trained, such as two fully connected layers in a series. Different from the experiment in the ["Fine Tuning"](fine-tuning.md) section, here, we do not retrain the pre-trained model used for feature extraction. This reduces the training time and the memory required to store model parameter gradients.
+The data set for this competition is a subset of the ImageNet data
+set. Therefore, we can use the approach discussed in
+:numref:`chapter_fine_tuning`
+to select a model pre-trained on the
+entire ImageNet data set and use it to extract image features to be input in the
+custom small-scale output network. Gluon provides a wide range of pre-trained
+models. Here, we will use the pre-trained ResNet-34 model. Because the
+competition data set is a subset of the pre-training data set, we simply reuse
+the input of the pre-trained model's output layer, i.e. the extracted
+features. Then, we can replace the original output layer with a small custom
+output network that can be trained, such as two fully connected layers in a
+series. Different from the experiment in
+:numref:`chapter_fine_tuning`, here, we do not retrain the pre-trained model used for feature
+extraction. This reduces the training time and the memory required to store
+model parameter gradients.
 
 You must note that, during image augmentation, we use the mean values and standard deviations of the three RGB channels for the entire ImageNet data set for normalization. This is consistent with the normalization of the pre-trained model.
 
 ```{.python .input  n=6}
 def get_net(ctx):
-    finetune_net = model_zoo.vision.resnet34_v2(pretrained=True)
+    finetune_net = gluon.model_zoo.vision.resnet34_v2(pretrained=True)
     # Define a new output network
     finetune_net.output_new = nn.HybridSequential(prefix='')
     finetune_net.output_new.add(nn.Dense(256, activation='relu'))
@@ -209,7 +222,7 @@ def get_net(ctx):
 When calculating the loss, we first use the member variable `features` to obtain the input of the pre-trained model's output layer, i.e. the extracted feature. Then, we use this feature as the input for our small custom output network and compute the output.
 
 ```{.python .input}
-loss = gloss.SoftmaxCrossEntropyLoss()
+loss = gluon.loss.SoftmaxCrossEntropyLoss()
 
 def evaluate_loss(data_iter, net, ctx):
     l_sum, n = 0.0, 0
@@ -292,7 +305,10 @@ with open('submission.csv', 'w') as f:
             [str(num) for num in output]) + '\n')
 ```
 
-After executing the above code, we will generate a "submission.csv" file. The format of this file is consistent with the Kaggle competition requirements. The method for submitting results is similar to method in the ["Get Started with Kaggle Competition: Predicting House Prices"](../chapter_deep-learning-basics/kaggle-house-price.md) section.
+After executing the above code, we will generate a "submission.csv" file. The
+format of this file is consistent with the Kaggle competition requirements. The
+method for submitting results is similar to method in
+:numref:`chapter_kaggle_house`.
 
 
 ## Summary
@@ -305,10 +321,6 @@ After executing the above code, we will generate a "submission.csv" file. The fo
 * When using the entire Kaggle data set, what kind of results do you get when you increase the `batch_size` (batch size) and `num_epochs` (number of epochs)?
 * Do you get better results if you use a deeper pre-trained model?
 * Scan the QR code to access the relevant discussions and exchange ideas about the methods used and the results obtained with the community. Can you come up with any better techniques?
-
-## Reference
-
-[1] Kaggle ImageNet Dog Breed Identification website. https://www.kaggle.com/c/dog-breed-identification
 
 ## Scan the QR Code to [Discuss](https://discuss.mxnet.io/t/2451)
 
